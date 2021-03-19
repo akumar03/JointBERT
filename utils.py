@@ -11,6 +11,10 @@ from transformers import BertTokenizer, DistilBertTokenizer, AlbertTokenizer
 
 from model import JointBERT, JointDistilBERT, JointAlbert
 
+from collections import defaultdict
+from functools import reduce
+import operator
+
 MODEL_CLASSES = {
     'bert': (BertConfig, JointBERT, BertTokenizer),
     'distilbert': (DistilBertConfig, JointDistilBERT, DistilBertTokenizer),
@@ -52,6 +56,10 @@ def set_seed(args):
 
 def compute_metrics(intent_preds, intent_labels, slot_preds, slot_labels):
     assert len(intent_preds) == len(intent_labels) == len(slot_preds) == len(slot_labels)
+    #print_confusion(intent_preds, intent_labels)
+    flat_labels = reduce(operator.concat,slot_labels)
+    flat_preds = reduce(operator.concat,slot_preds)
+    #print_confusion(flat_preds,flat_labels)
     results = {}
     intent_result = get_intent_acc(intent_preds, intent_labels)
     slot_result = get_slot_metrics(slot_preds, slot_labels)
@@ -79,6 +87,40 @@ def get_intent_acc(preds, labels):
         "intent_acc": acc
     }
 
+def keys_exists(element, *keys):
+    '''
+    Check if *keys (nested) exists in `element` (dict).
+    '''
+    if not isinstance(element, dict):
+        raise AttributeError('keys_exists() expects dict as first argument.')
+    if len(keys) == 0:
+        raise AttributeError('keys_exists() expects at least two arguments, one given.')
+
+    _element = element
+    for key in keys:
+        try:
+            _element = _element[key]
+        except KeyError:
+            return False
+    return True
+
+def print_confusion(preds, labels):
+    assert len(preds) == len(labels)
+    unique_labels, unique_counts = np.unique(labels, return_counts=True)
+    cmatrix_size = len(unique_labels)+1
+    #cmatrix = np.zeros((cmatrix_size,cmatrix_size))
+    cmatrix = defaultdict(dict)
+    for pred,label in zip(preds,labels):
+        #print("pred:{},label:{}".format(pred, label))
+        if pred != label:
+            print ("NE: pred:{},label:{}".format(pred,label))
+        if keys_exists(cmatrix,pred,label):
+            cmatrix[pred][label] +=1
+        else:
+            cmatrix[pred][label] = 1
+    print(cmatrix)
+
+
 
 def read_prediction_text(args):
     return [text.strip() for text in open(os.path.join(args.pred_dir, args.pred_input_file), 'r', encoding='utf-8')]
@@ -105,3 +147,4 @@ def get_sentence_frame_acc(intent_preds, intent_labels, slot_preds, slot_labels)
     return {
         "sementic_frame_acc": sementic_acc
     }
+

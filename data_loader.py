@@ -118,6 +118,7 @@ class JointProcessor(object):
 
 processors = {
     "atis": JointProcessor,
+    "atis_rand_10": JointProcessor,
     "snips": JointProcessor
 }
 

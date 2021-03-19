@@ -71,7 +71,7 @@ class Trainer(object):
         self.model.zero_grad()
 
         train_iterator = trange(int(self.args.num_train_epochs), desc="Epoch")
-
+        epoch = 0
         for _ in train_iterator:
             epoch_iterator = tqdm(train_dataloader, desc="Iteration")
             for step, batch in enumerate(epoch_iterator):
@@ -104,13 +104,21 @@ class Trainer(object):
                     if self.args.logging_steps > 0 and global_step % self.args.logging_steps == 0:
                         self.evaluate("dev")
 
+
                     if self.args.save_steps > 0 and global_step % self.args.save_steps == 0:
                         self.save_model()
 
-                if 0 < self.args.max_steps < global_step:
-                    epoch_iterator.close()
-                    break
+            with open("summary.tsv", 'a') as ptr_sum:
+                ptr_sum.write("{}\t{}\t".format(epoch, "dev"))
+            self.evaluate("dev")
+            with open("summary.tsv", 'a') as ptr_sum:
+                ptr_sum.write("{}\t{}\t".format(epoch, "test"))
+            self.evaluate("test")
 
+            if 0 < self.args.max_steps < global_step:
+                epoch_iterator.close()
+                break
+            epoch += 1
             if 0 < self.args.max_steps < global_step:
                 train_iterator.close()
                 break
@@ -207,9 +215,11 @@ class Trainer(object):
         results.update(total_result)
 
         logger.info("***** Eval results *****")
-        for key in sorted(results.keys()):
-            logger.info("  %s = %s", key, str(results[key]))
-
+        with open("summary.tsv", 'a') as ptr_sum:
+            for key in sorted(results.keys()):
+                logger.info("  %s = %s", key, str(results[key]))
+                ptr_sum.write("{}\t ".format(results[key]))
+            ptr_sum.write("\n")
         return results
 
     def save_model(self):
