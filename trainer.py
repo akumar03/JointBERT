@@ -71,7 +71,7 @@ class Trainer(object):
         self.model.zero_grad()
 
         train_iterator = trange(int(self.args.num_train_epochs), desc="Epoch")
-        epoch = 0
+        epoch = 1
         for _ in train_iterator:
             epoch_iterator = tqdm(train_dataloader, desc="Iteration")
             for step, batch in enumerate(epoch_iterator):
@@ -101,17 +101,21 @@ class Trainer(object):
                     self.model.zero_grad()
                     global_step += 1
 
-                    if self.args.logging_steps > 0 and global_step % self.args.logging_steps == 0:
-                        self.evaluate("dev")
+                    #if self.args.logging_steps > 0 and global_step % self.args.logging_steps == 0:
+                        #self.evaluate("dev")
 
 
                     if self.args.save_steps > 0 and global_step % self.args.save_steps == 0:
                         self.save_model()
 
-            with open("summary.tsv", 'a') as ptr_sum:
+
+            with open("summary_"+self.args.task +".tsv", 'a') as ptr_sum:
+                ptr_sum.write("{}\t{}\t".format(epoch, "train"))
+            self.evaluate("train")
+            with open("summary_" + self.args.task + ".tsv", 'a') as ptr_sum:
                 ptr_sum.write("{}\t{}\t".format(epoch, "dev"))
             self.evaluate("dev")
-            with open("summary.tsv", 'a') as ptr_sum:
+            with open("summary_" + self.args.task + ".tsv", 'a') as ptr_sum:
                 ptr_sum.write("{}\t{}\t".format(epoch, "test"))
             self.evaluate("test")
 
@@ -130,6 +134,8 @@ class Trainer(object):
             dataset = self.test_dataset
         elif mode == 'dev':
             dataset = self.dev_dataset
+        elif mode == 'train':
+            dataset = self.train_dataset
         else:
             raise Exception("Only dev and test dataset available")
 
@@ -215,7 +221,7 @@ class Trainer(object):
         results.update(total_result)
 
         logger.info("***** Eval results *****")
-        with open("summary.tsv", 'a') as ptr_sum:
+        with open("summary_" + self.args.task + ".tsv", 'a') as ptr_sum:
             for key in sorted(results.keys()):
                 logger.info("  %s = %s", key, str(results[key]))
                 ptr_sum.write("{}\t ".format(results[key]))
