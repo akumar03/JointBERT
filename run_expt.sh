@@ -9,7 +9,7 @@ do
   rm -Rf data/${task}_rand_${noise}/
   rm data/cached_*
   python generate_random_noise.py --task $task --noise $noise --seed $seed
-  python3 main.py --task ${task}_rand_${noise} --model_type bert  --model_dir ${task}_rand_${noise}_model  --do_train --do_eval --num_train_epochs 25 --learning_rate 5e-6
+  python3 main.py --task ${task}_rand_${noise} --model_type bert  --model_dir ${task}_rand_${noise}_model  --do_train --do_eval --num_train_epochs 100 --learning_rate 5e-5
 done
 }
 
